@@ -1,0 +1,13 @@
+[project]
+name = "gpu-and-inference-hw"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "aiohttp==3.13.3",
+    "matplotlib==3.10.8",
+    "numpy==2.2.6",
+    "pytest==9.0.3",
+    "torch==2.9.1",
+    "tqdm==4.67.3",
+    "transformers==4.57.6",
+]
