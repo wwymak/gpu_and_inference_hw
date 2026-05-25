@@ -172,16 +172,26 @@ if __name__ == "__main__":
 # ============================================================================
 #
 # Changes made and speedup per fix:
-# 1. loading model in bfloat16 instead of float32 4.2x vs baseline (or if
-#  we only look at CUDA total time, 4.8x
-# 2 preallocating output tensor and removing the .item() call:  5x vs baseline
-# compared to with only bfloat16, in terms of CUDA time, ~1.08x
-# 3. making use of kv cache: 5.7x vs baseline (wall clock time), comparing only cuda time to v2,
-#  4x times  (ie if we only conisider CUDA time, adding all 3 fixes gives us ~20 speedup in terms
-# of cuda time compared to baseline
-# 4. using logits_to_keep=1 argument -- The Hugging Face transformers documentation states that only
-# the last token's logits are needed for generation, but the deafult is 0, ie using all the token logits
-# 5. add torch.compile
-#6.  add torch.backends.cuda.enable_flash_sdp(True)
+
+# | # | Change | Wall-clock speedup vs baseline |
+# |---|--------|-------------------------------|
+# | 1 | `bfloat16` instead of `float32` | ~4.2x |
+# | 2 | Pre-allocated output tensor, no `.item()` per step | ~5.0x |
+# | 3 | KV cache via `use_cache=True` + `past_key_values` | ~5.7x |
+# | 4 | `logits_to_keep=1` (don't materialize all-token logits) | ~6.2x |
+# | 5 | `torch.compile(model)` (default mode) | ~6.4x |
+# | 6 | `torch.compile(model, mode="reduce-overhead")` + `StaticCache` | ~15x |
+
 # Biggest impact and why:
+# The biggest impact is item 6, using reduce-overhead in torch.compile
+#  `torch.compile(model, mode="reduce-overhead")`
+# After items 1–5, the v6 profile showed:
+# - `Self CPU time total: 80ms`
+# - `Self CUDA time total: 12ms`
 #
+# That ~7:1 ratio meant the GPU was idle most of the time waiting for the CPU to
+# launch the next kernel — a classic CPU-bound decoder. The remaining wall-clock
+# gap was almost entirely Python/dispatcher overhead, not compute.
+# By using the reduce-overhead option, we make use of CUDA graphs, which capture a fixed sequence of
+# kernel launches once and then replay them with effectively zero CPU overhead.
+# so we can see that for optimisation, we should not forget about the cpu
