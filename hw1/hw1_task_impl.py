@@ -115,7 +115,10 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 # ============================================================================
 # Answer these after you generate `results/roofline.png` and inspect the points.
 # *NOTE*, there are 2 folders under results, one for h100 and one for l40s. In my
-# answers below, I refer to the h100 results, although the l40s results are quite similar
+# answers below, I refer to the h100 results, although the l40s results are quite similar.
+# Also above script by default writes to results/ folder -- I moved them
+# manually to a subfolder from remote machine with rsync
+
 # Q1. Look at the compiled element-wise operations from `1 ops` through `64 ops`.
 # Why does performance rise as arithmetic intensity increases even though the
 # measured runtime changes only a little?

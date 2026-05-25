@@ -172,7 +172,9 @@ if __name__ == "__main__":
 # ============================================================================
 #
 # Changes made and speedup per fix: (see the logs under results/h100/results)
-# logs for best result 'v7b_better_compile_flags.txt'
+# logs for best result -> 'v7b_better_compile_flags.txt'
+# above script by default writes to results/ folder -- I moved them
+# manually to a subfolder from remote machine with rsync
 
 # | # | Change | Wall-clock speedup vs baseline |
 # |---|--------|-------------------------------|
