@@ -171,11 +171,12 @@ if __name__ == "__main__":
 # Writeup
 # ============================================================================
 #
-# Changes made and speedup per fix:
+# Changes made and speedup per fix: (see the logs under results/h100/results)
+# logs for best result 'v7b_better_compile_flags.txt'
 
 # | # | Change | Wall-clock speedup vs baseline |
 # |---|--------|-------------------------------|
-# | 1 | `bfloat16` instead of `float32` | ~4.2x |
+# | 1 | `bfloat16` instead of `float32` | ~4x |
 # | 2 | Pre-allocated output tensor, no `.item()` per step | ~5.0x |
 # | 3 | KV cache via `use_cache=True` + `past_key_values` | ~5.7x |
 # | 4 | `logits_to_keep=1` (don't materialize all-token logits) | ~6.2x |
