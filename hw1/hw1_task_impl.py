@@ -118,13 +118,28 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 # Q1. Look at the compiled element-wise operations from `1 ops` through `64 ops`.
 # Why does performance rise as arithmetic intensity increases even though the
 # measured runtime changes only a little?
-#
+#  In 1 - 64 ops, the gpu is memory bound, the data transfer between cpu memory
+# and gpu memory dominates, and the gpu spent most of the time being idle while waiting
+# for data. However, this memory transfer time doesn't change much from 1-64 ops,
+# while the flops increases proportionally a lot more, so performance rises
+# operation.
+
 # Q2. In one sample run, `matmul 1024x1024` achieved lower FLOP/s than the
 # `128 ops` compiled element-wise operation. Give one or two reasons why that can
 # happen on a large GPU like an H100.
+# in a large h100, the matmul and element wise ops very much under utilise the gpu
+# for the matmul cuda kernel, there is extra overhead (tile loading, tile boundary checks etc), and
+# these overheads dominate. In contrast, there
+# is none of these for the elementwise op, which compiles to a single streaming loop
+# The matmuls are also ran in fp32 without enabling tensor cores -- this means the op did not utilise
+# the extra capability offered by the hardware
 #
 # Q3. Between `64 ops` and `128 ops`, runtime increases more noticeably than it
 # did for smaller operations. What does that suggest about what resource is
 # becoming the bottleneck?
-#
+# This suggests that compute (gpu ) is becoming the bottleneck. In this scenario, the gpu
+# is already almost at maximum FLOP/s, adding more ops mean the extra ops need to wait, unlike
+# in the memory bound case
+
 # Q4. Why do the eager `ops-K` points look so different from the compiled ones?
+# the eager ops-k
