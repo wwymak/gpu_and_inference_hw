@@ -114,7 +114,8 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 # Part 3: Short Writeup
 # ============================================================================
 # Answer these after you generate `results/roofline.png` and inspect the points.
-#
+# *NOTE*, there are 2 folders under results, one for h100 and one for l40s. In my
+# answers below, I refer to the h100 results, although the l40s results are quite similar
 # Q1. Look at the compiled element-wise operations from `1 ops` through `64 ops`.
 # Why does performance rise as arithmetic intensity increases even though the
 # measured runtime changes only a little?
@@ -142,4 +143,7 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 # in the memory bound case
 
 # Q4. Why do the eager `ops-K` points look so different from the compiled ones?
-# the eager ops-k
+# the eager ops-k more or less all stack up on top of each other in the roofline plot.this is because in pytorch
+# eager mode, a kernel is launched for each op, so total time required is proportional
+# to (time for 1 op + time for data transfer for 1 op) -- this is fixed, so flop/s remains the same, and there
+# are no gains as we see for the compiled version
