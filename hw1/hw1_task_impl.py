@@ -122,8 +122,8 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 # Q1. Look at the compiled element-wise operations from `1 ops` through `64 ops`.
 # Why does performance rise as arithmetic intensity increases even though the
 # measured runtime changes only a little?
-#  In 1 - 64 ops, the gpu is memory bound, the data transfer between cpu memory
-# and gpu memory dominates, and the gpu spent most of the time being idle while waiting
+#  In 1 - 64 ops, the gpu is memory bound, the data transfer between hbm memory
+# and the gpu registers  dominates, and the gpu spent most of the time being idle while waiting
 # for data. However, this memory transfer time doesn't change much from 1-64 ops,
 # while the flops increases proportionally a lot more, so performance rises
 # operation.
@@ -131,12 +131,15 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 # Q2. In one sample run, `matmul 1024x1024` achieved lower FLOP/s than the
 # `128 ops` compiled element-wise operation. Give one or two reasons why that can
 # happen on a large GPU like an H100.
-# in a large h100, the matmul and element wise ops very much under utilise the gpu
-# for the matmul cuda kernel, there is extra overhead (tile loading, tile boundary checks etc), and
-# these overheads dominate. In contrast, there
-# is none of these for the elementwise op, which compiles to a single streaming loop
-# The matmuls are also ran in fp32 without enabling tensor cores -- this means the op did not utilise
-# the extra capability offered by the hardware
+#
+# The matmuls are ran in fp32 without enabling tensor cores -- this means the op did not utilise
+# the extra capability offered by the hardware.
+
+# The GEMM kernels on the gpu carry extra launch overheads such as tiling, prefetch pipelines, etc.
+# On Tensor Cores those overheads are hidden by very high throughput.
+# On FP32 CUDA cores, where peak throughput is a lot lower, those same overheads are now a visible fraction
+# the simple streaming 128ops kernel carry none of these overheads, so it can get even closer to the roofline
+
 #
 # Q3. Between `64 ops` and `128 ops`, runtime increases more noticeably than it
 # did for smaller operations. What does that suggest about what resource is
@@ -147,6 +150,7 @@ def compute_elementwise_metrics(num_elements, num_ops, bytes_per_element, ms, va
 
 # Q4. Why do the eager `ops-K` points look so different from the compiled ones?
 # the eager ops-k more or less all stack up on top of each other in the roofline plot.this is because in pytorch
-# eager mode, a kernel is launched for each op, so total time required is proportional
-# to (time for 1 op + time for data transfer for 1 op) -- this is fixed, so flop/s remains the same, and there
-# are no gains as we see for the compiled version
+# eager mode, a kernel is launched for each op--  each mul and add launches its own kernel,
+# each kernel reads its inputs and writes its output to HBM so total runtime is proportional to num_ops. flops
+# is also proportional to num_ops, which equates to flop/s being a constant for eager mode regardless of the
+# number of operations

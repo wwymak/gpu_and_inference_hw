@@ -3,7 +3,8 @@ __pycache__/
 *.py[cod]
 #hw1/results/
 #hw2/results/
-
+*.zip
+*submission
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
